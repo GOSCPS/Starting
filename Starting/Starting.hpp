@@ -1,24 +1,16 @@
 ﻿/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * 这个文件来自 GOSCPS(https://github.com/GOSCPS)
  * 使用 GOSCPS 许可证
- * File:    StartingPkg.h
- * Content: StartingPkg Main Head File
+ * File:    Starting.h
+ * Content: Starting Main Head File
  * Copyright (c) 2020 GOSCPS 保留所有权利.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #pragma once
 
 extern "C"{
-#include <uefi.h>
-#include <Library\UefiLib.h>
-#include <Library\UefiRuntimeServicesTableLib.h>
-#include <Library\UefiBootServicesTableLib.h>
-#include <Library\UefiApplicationEntryPoint.h>
-#include <Protocol/DevicePathToText.h>
-#include <Protocol/SimpleFileSystem.h>
-#include <Protocol/LoadedImage.h>
-#include <Guid/FileInfo.h>
-#include <Library/DevicePathLib.h>
+#include <efi.h>
+#include <efilib.h>
 }
 
 #define G_EFI_ERROR_RETURN(s,r) { if(EFI_ERROR(s)) {return r;} }
@@ -35,7 +27,10 @@ using int64_t = INT64;
 using uintn = UINTN;
 
 namespace goscps{
-static EFI_STATUS LastError = zEFI_SUCCESS;
+//UEFI最后错误
+static EFI_STATUS LastError = EFI_SUCCESS;
+
+//UEFI Image句柄
 static EFI_HANDLE *GolImageHandles = nullptr;
 
 //内存信息

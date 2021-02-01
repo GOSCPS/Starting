@@ -1,12 +1,12 @@
 ﻿/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * 这个文件来自 GOSCPS(https://github.com/GOSCPS)
  * 使用 GOSCPS 许可证
- * File:    StartingPkg.cpp
- * Content: StartingPkg Main Source File
+ * File:    StartingMain.cpp
+ * Content: StartingMain Main Source File
  * Copyright (c) 2020 GOSCPS 保留所有权利.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include "StartingPkg.hpp"
+#include "Starting.hpp"
 
 //读取配置文件
 char *goscps::ReadFromFile(const char16_t *Path){
@@ -128,7 +128,7 @@ UefiMain(IN EFI_HANDLE ImageHandle,IN EFI_SYSTEM_TABLE *SystemTable) {
 		a = Config + index;
 		index++;
 
-		if(a == '\0')
+		if(*a == '\0')
 		break;
 
 		Print((CHAR16*)u"%c",a);
