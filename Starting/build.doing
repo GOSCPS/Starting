@@ -1,0 +1,54 @@
+# build.doing
+
+target "default"
+
+\"Ifndef"{"GnuEfiPath"}
+\"Error"{"GnuEfiPath not defined"}
+endif
+
+\"Def"{"CXXFLAGS= \
+    -target x86_64-unknown-windows  \
+    -ffreestanding  \
+    -fshort-wchar   \
+    -mno-red-zone   \
+"}
+
+\"Def"{"LINKFLAGS= \
+    -target x86_64-unknown-windows  \
+    -nostdlib   \
+    -Wl,-entry:efi_main     \
+    -Wl,-subsystem:efi_application  \
+    -fuse-ld=lld-link   \
+"}
+
+\"ShWithVar"{" \
+clang  \
+    -I${GnuEfiPath}/inc/ \
+    -I${GnuEfiPath}/inc/x86_64/ \
+    -I${GnuEfiPath}/inc/protocol \
+    ${CXXFLAGS} \
+    -c StartingMain.c \
+    -o Starting.o \
+"}
+
+\"ShWithVar"{" \
+clang  \
+    -I${GnuEfiPath}/inc/ \
+    -I${GnuEfiPath}/inc/x86_64/ \
+    -I${GnuEfiPath}/inc/protocol \
+    ${CXXFLAGS} \
+    -c ${GnuEfiPath}/lib/data.c \
+    -o data.o \
+"}
+
+\"ShWithVar"{" \
+clang \
+    ${LINKFLAGS} \
+    Starting.o \
+    data.o \
+    -o String.EFI \
+"}
+
+\"ShWithVar"{""}
+
+end
