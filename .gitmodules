@@ -1,0 +1,3 @@
+[submodule "Starting/Uefi"]
+	path = Starting/Uefi
+	url = https://gitlab.com/bztsrc/posix-uefi

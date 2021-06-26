@@ -1,0 +1,17 @@
+[package]
+name = "starting"
+version = "0.1.0"
+edition = "2018"
+authors = ["GOSCPS Team <goscps@foxmail.com>"]
+
+[profile.dev]
+# 禁用栈展开
+panic = "abort"
+
+[profile.release]
+# 同上
+panic = "abort"
+
+[dependencies]
+uefi = "0.11.0"
+uefi-services = "0.8.0"
