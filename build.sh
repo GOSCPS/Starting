@@ -1,0 +1,1 @@
+cargo build --target=x86_64-unknown-uefi -Zbuild-std=core,compiler_builtins,alloc
