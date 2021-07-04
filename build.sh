@@ -1,1 +1,1 @@
-cargo build --target=x86_64-unknown-uefi -Zbuild-std=core,compiler_builtins,alloc
+cargo build --target=x86_64-unknown-uefi -Z build-std=core,compiler_builtins,alloc -Z build-std-features=compiler-builtins-mem

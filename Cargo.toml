@@ -14,5 +14,3 @@ panic = "abort"
 
 [dependencies]
 uefi = "0.11.0"
-uefi-services = "0.8.0"
-rlibc = "1"

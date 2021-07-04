@@ -8,8 +8,11 @@
 #![no_main]
 #![feature(abi_efiapi)]
 #![feature(panic_info_message)]
+#![feature(alloc_error_handler)]
 
 use core::panic::PanicInfo;
+
+extern crate alloc;
 
 // 载入uefi定义
 use core::fmt::Write;
@@ -21,7 +24,6 @@ mod engine;
 mod tool;
 
 // 引入memcpy等函数
-extern crate rlibc;
 
 // 全局系统表
 pub static mut IMAGE_HANDLE: Option<Handle> = None;
@@ -42,9 +44,9 @@ pub extern "C" fn efi_main(handle: Handle, system_table: SystemTable<Boot>) -> S
         ));
     }
 
-    // 禁用看门狗
-    engine::set_watchdog_timer();
-    tool::print_fmt(format_args!("Set the watchdog done.\n"));
+    // 初始化
+    engine::init_system();
+    tool::print_fmt(format_args!("Init boot system done.\n"));
 
     // 设置分辨率
     // 1024 * 768
@@ -55,7 +57,7 @@ pub extern "C" fn efi_main(handle: Handle, system_table: SystemTable<Boot>) -> S
     }
 
     // 测试gop
-    match engine::gop::test_gop() {
+    match engine::gop::clear_framebuffer() {
         Ok(ok) => ok,
 
         Err(_err) => panic!("Couldn't test the gop!"),
@@ -84,7 +86,7 @@ fn panic(panic_info: &PanicInfo) -> ! {
         }
 
         // 打印message
-        if let Some(msg) = panic_info.message(){
+        if let Some(msg) = panic_info.message() {
             tool::print_fmt(*msg);
             tool::print_fmt(format_args!("\n"));
         }
@@ -101,6 +103,6 @@ fn panic(panic_info: &PanicInfo) -> ! {
         // 警告用户
         tool::print_fmt(format_args!("Starting stop working. Try reboot?\n"));
 
-        loop{}
+        loop {}
     }
 }
