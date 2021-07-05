@@ -14,3 +14,8 @@ panic = "abort"
 
 [dependencies]
 uefi = "0.11.0"
+uuid = { version = "0.8", default-features = false }
+
+# 启用json解析器
+serde = { version = "1.0", default-features = false, features = ["alloc","derive"] }
+serde_json = { version = "1.0", default-features = false, features = ["alloc"] }

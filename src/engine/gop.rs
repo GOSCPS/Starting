@@ -6,7 +6,6 @@
 
 use crate::tool;
 use crate::IMAGE_SYSTEM_TABLE;
-use core::convert::TryInto;
 use uefi::proto::console::gop::BltOp;
 use uefi::proto::console::gop::BltPixel;
 use uefi::proto::console::gop::GraphicsOutput;
@@ -33,9 +32,9 @@ unsafe fn get_gop() -> &'static mut GraphicsOutput<'static> {
 /// 如果成功返回true，否则false
 pub fn set_video_resolution(
     // 水平分辨率
-    horizontal: u64,
+    horizontal: usize,
     // 垂直分辨率
-    vertical: u64,
+    vertical: usize,
 ) -> Result<(), ()> {
     unsafe {
         // 获取引导服务
@@ -45,7 +44,7 @@ pub fn set_video_resolution(
         for mode_completion in gop.as_ref().unwrap().modes() {
             let mode = mode_completion.unwrap();
             let info = mode.info();
-            let resolution = info.resolution();
+            let resolution: (usize, usize) = info.resolution();
 
             // 输出分辨率
             tool::print_fmt(format_args!(
@@ -57,11 +56,7 @@ pub fn set_video_resolution(
 
             // 检查分辨率
             // 必须为RGB格式
-            if resolution.0 == horizontal.try_into().unwrap()
-                && resolution.1 == vertical.try_into().unwrap()
-            {
-                tool::print_fmt(format_args!("Find resolution successfully.\n"));
-
+            if resolution.0 == horizontal && resolution.1 == vertical {
                 // 设置模式
                 gop.as_mut().unwrap().set_mode(&mode).unwrap().unwrap();
 
@@ -86,13 +81,15 @@ pub fn clear_framebuffer() -> Result<(), ()> {
 
         let mode_info = gop.as_mut().unwrap().current_mode_info();
 
-        gop.as_mut().unwrap().blt(
-            BltOp::VideoFill{
-                color : BltPixel::new(0,0,0),
-                dest : (0,0),
-                dims : mode_info.resolution()
-            }
-        ).unwrap().unwrap();
+        gop.as_mut()
+            .unwrap()
+            .blt(BltOp::VideoFill {
+                color: BltPixel::new(0, 0, 0),
+                dest: (0, 0),
+                dims: mode_info.resolution(),
+            })
+            .unwrap()
+            .unwrap();
     }
 
     Ok(())

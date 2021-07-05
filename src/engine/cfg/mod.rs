@@ -2,29 +2,25 @@
 // Using People License
 // Copyright (c) 2020-2021 GOSCPS 保留所有权利.
 //=============================================
-// 用来操作配置文件
+// 配置文件
 
 use alloc::string::String;
+use serde::{Deserialize, Serialize};
 
-/// 解析配置文件需要实现的接口
-/// 
-/// 所有函数以panic!("STR");报告错误
-pub trait ConfigParser {
-    /// 解析配置文件
-    fn parse(&mut self, strs: &str);
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Config {
+    #[serde(rename = "EnableGop")]
+    pub enable_gop: bool,
 
-    /// 获取字符串值
-    fn get_string(&self, key: &str) -> &str;
+    #[serde(rename = "GopX")]
+    pub gop_x: usize,
 
-    /// 获取数字值
-    fn get_number(&self, key: &str) -> i64;
+    #[serde(rename = "GopY")]
+    pub gop_y: usize,
 
-    /// 获取bool键值
-    fn get_bool(&self, key: &str) -> bool;
+    #[serde(rename = "DiskGUUID")]
+    pub disk_guid: String,
 
-    /// 是否包含某一键
-    fn contain_key(&self, key: &str) -> bool;
-
-    /// 获取所有键值
-    fn keys(&self) -> &[String];
+    #[serde(rename = "PartitionGUUID")]
+    pub partition_guid: String,
 }

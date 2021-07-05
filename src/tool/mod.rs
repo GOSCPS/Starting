@@ -13,6 +13,6 @@ pub fn print_fmt(args: Arguments<'_>) {
             .unwrap()
             .stdout()
             .write_fmt(args)
-            .unwrap();
+            .ok();
     }
 }

@@ -10,20 +10,18 @@
 #![feature(panic_info_message)]
 #![feature(alloc_error_handler)]
 
-use core::panic::PanicInfo;
 
+// 启用alloc
 extern crate alloc;
 
-// 载入uefi定义
-use core::fmt::Write;
+// 载入定义
 use uefi::prelude::*;
-use uefi::CStr16;
 
 // 模块
 mod engine;
 mod tool;
+mod panic;
 
-// 引入memcpy等函数
 
 // 全局系统表
 pub static mut IMAGE_HANDLE: Option<Handle> = None;
@@ -48,61 +46,29 @@ pub extern "C" fn efi_main(handle: Handle, system_table: SystemTable<Boot>) -> S
     engine::init_system();
     tool::print_fmt(format_args!("Init boot system done.\n"));
 
-    // 设置分辨率
-    // 1024 * 768
-    match engine::gop::set_video_resolution(1024, 768) {
-        Ok(ok) => ok,
+    // 读取配置文件
+    tool::print_fmt(format_args!("Rerad config from:{}\n",engine::fs::CONFIG_PATH));
 
-        Err(_err) => panic!("Couldn't set the video resolution!"),
+    let config : engine::cfg::Config = serde_json::from_str(
+        &engine::fs::read_file(engine::fs::CONFIG_PATH)
+    ).unwrap();
+
+    // 读取完毕
+    // 设置gop
+    if config.enable_gop{
+        match engine::gop::set_video_resolution(config.gop_x,config.gop_y){
+            Ok(_ok) => (),
+
+            Err(_err) => panic!("Set the Graphics Output Protocol resolution failed down!")
+        }
+
+        // 清屏
+        engine::gop::clear_framebuffer().unwrap();
     }
 
-    // 测试gop
-    match engine::gop::clear_framebuffer() {
-        Ok(ok) => ok,
+    // 准备内核
 
-        Err(_err) => panic!("Couldn't test the gop!"),
-    }
+
 
     loop {}
-}
-
-/// panic擦屁股函数
-#[panic_handler]
-fn panic(panic_info: &PanicInfo) -> ! {
-    // 获取系统表
-    unsafe {
-        let sys = IMAGE_SYSTEM_TABLE.as_ref().unwrap();
-
-        // 报告panic
-        sys.stdout().write_str("Starting panic!\n").unwrap();
-
-        // 打印panic信息
-        if let Some(s) = panic_info.payload().downcast_ref::<&'static str>() {
-            sys.stdout().write_str(s).unwrap();
-            sys.stdout().write_str("\n").unwrap();
-        } else if let Some(s) = panic_info.payload().downcast_ref::<&CStr16>() {
-            sys.stdout().output_string(s).unwrap().unwrap();
-            sys.stdout().write_str("\n").unwrap();
-        }
-
-        // 打印message
-        if let Some(msg) = panic_info.message() {
-            tool::print_fmt(*msg);
-            tool::print_fmt(format_args!("\n"));
-        }
-
-        // 打印panic位置
-        if let Some(pos) = panic_info.location() {
-            tool::print_fmt(format_args!(
-                "At file `{}` lines {}\n",
-                pos.file(),
-                pos.line()
-            ));
-        }
-
-        // 警告用户
-        tool::print_fmt(format_args!("Starting stop working. Try reboot?\n"));
-
-        loop {}
-    }
 }
