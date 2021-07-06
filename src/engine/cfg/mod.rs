@@ -18,9 +18,9 @@ pub struct Config {
     #[serde(rename = "GopY")]
     pub gop_y: usize,
 
-    #[serde(rename = "DiskGUUID")]
+    #[serde(rename = "DiskGUID")]
     pub disk_guid: String,
 
-    #[serde(rename = "PartitionGUUID")]
+    #[serde(rename = "PartitionGUID")]
     pub partition_guid: String,
 }

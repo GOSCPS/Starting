@@ -10,18 +10,17 @@
 #![feature(panic_info_message)]
 #![feature(alloc_error_handler)]
 
-
 // 启用alloc
 extern crate alloc;
 
 // 载入定义
 use uefi::prelude::*;
+use uuid::Uuid;
 
 // 模块
 mod engine;
-mod tool;
 mod panic;
-
+mod tool;
 
 // 全局系统表
 pub static mut IMAGE_HANDLE: Option<Handle> = None;
@@ -47,19 +46,21 @@ pub extern "C" fn efi_main(handle: Handle, system_table: SystemTable<Boot>) -> S
     tool::print_fmt(format_args!("Init boot system done.\n"));
 
     // 读取配置文件
-    tool::print_fmt(format_args!("Rerad config from:{}\n",engine::fs::CONFIG_PATH));
+    tool::print_fmt(format_args!(
+        "Rerad config from:{}\n",
+        engine::fs::CONFIG_PATH
+    ));
 
-    let config : engine::cfg::Config = serde_json::from_str(
-        &engine::fs::read_file(engine::fs::CONFIG_PATH)
-    ).unwrap();
+    let config: engine::cfg::Config =
+        serde_json::from_str(&engine::fs::read_file(engine::fs::CONFIG_PATH)).unwrap();
 
     // 读取完毕
     // 设置gop
-    if config.enable_gop{
-        match engine::gop::set_video_resolution(config.gop_x,config.gop_y){
+    if config.enable_gop {
+        match engine::gop::set_video_resolution(config.gop_x, config.gop_y) {
             Ok(_ok) => (),
 
-            Err(_err) => panic!("Set the Graphics Output Protocol resolution failed down!")
+            Err(_err) => panic!("Set the Graphics Output Protocol resolution failed down!"),
         }
 
         // 清屏
@@ -67,8 +68,7 @@ pub extern "C" fn efi_main(handle: Handle, system_table: SystemTable<Boot>) -> S
     }
 
     // 准备内核
-
-
+    engine::fs::disk::get_partition(Uuid::nil(), Uuid::nil());
 
     loop {}
 }

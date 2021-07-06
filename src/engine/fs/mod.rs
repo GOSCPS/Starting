@@ -4,6 +4,8 @@
 //=============================================
 // 用来操作文件系统
 
+pub mod disk;
+
 use crate::IMAGE_SYSTEM_TABLE;
 use alloc::string::String;
 use alloc::vec;
@@ -46,10 +48,12 @@ pub fn read_file(path: &str) -> String {
                 .unwrap()
                 .file_size();
 
+            // 读进缓冲区
             let mut text_buffer = vec![0u8; file_size.try_into().unwrap()].into_boxed_slice();
 
             reader.read(&mut text_buffer).unwrap().unwrap();
 
+            // 转换为字符串
             String::from_utf8((&text_buffer).to_vec()).unwrap()
         } else {
             panic!("Filed to open file. Look like a Directory");
@@ -58,5 +62,4 @@ pub fn read_file(path: &str) -> String {
 }
 
 /// 配置文件路径
-pub const CONFIG_PATH : &str = "starting/config.json";
-
+pub const CONFIG_PATH: &str = "\\starting\\config.json";
