@@ -28,7 +28,7 @@ pub static mut IMAGE_SYSTEM_TABLE: Option<SystemTable<Boot>> = None;
 
 /// 入口函数
 #[no_mangle]
-pub extern "C" fn efi_main(handle: Handle, system_table: SystemTable<Boot>) -> Status {
+pub extern "efiapi" fn efi_main(handle: Handle, system_table: SystemTable<Boot>) -> Status {
     // 初始化全局变量
     unsafe {
         IMAGE_HANDLE = Some(handle);
@@ -68,7 +68,15 @@ pub extern "C" fn efi_main(handle: Handle, system_table: SystemTable<Boot>) -> S
     }
 
     // 准备内核
-    engine::fs::disk::get_partition(Uuid::nil(), Uuid::nil());
+    let (begin, end) = engine::fs::disk::get_partition(
+        Uuid::parse_str(&config.disk_guid).unwrap(),
+        Uuid::parse_str(&config.partition_guid).unwrap(),
+    );
+
+    tool::print_fmt(format_args!(
+        "Begin at lba:{0}; End at lba:{1}\n",
+        begin, end
+    ));
 
     loop {}
 }

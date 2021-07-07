@@ -6,14 +6,14 @@
 
 use crate::IMAGE_SYSTEM_TABLE;
 use alloc::boxed::Box;
+use alloc::string::String;
 use alloc::vec;
-use core::convert::TryInto;
+use alloc::vec::Vec;
 use core::convert::TryFrom;
+use core::convert::TryInto;
 use core::{u128, u32, u64};
 use uefi::proto::media::block::BlockIO;
 use uuid::Uuid;
-use alloc::string::String;
-use alloc::vec::Vec;
 
 /// 获取BlockIO Handle
 unsafe fn get_disk() -> &'static mut uefi::proto::media::block::BlockIO {
@@ -122,8 +122,8 @@ unsafe fn get_gpt_header(disk: &mut BlockIO) -> Box<GptHeaderInfo> {
 }
 
 /// 转换字符串所用
-fn convert_partition_utf16_name(raw: &[u8;72]) -> [u16; 36] {
-    let mut result : [u16; 36] = [0u16;36];
+fn convert_partition_utf16_name(raw: &[u8; 72]) -> [u16; 36] {
+    let mut result: [u16; 36] = [0u16; 36];
     let mut p = 0;
     let mut p2 = 0;
     while p < raw.len() {
@@ -137,19 +137,21 @@ fn convert_partition_utf16_name(raw: &[u8;72]) -> [u16; 36] {
     result
 }
 
-
 /// 获取分区表项
 unsafe fn get_partition_item(
     header: Box<GptHeaderInfo>,
-    disk : &mut BlockIO,
+    disk: &mut BlockIO,
 ) -> Vec<Box<PartitionItem>> {
     // 检查数据
     if header.partition_item_size != 128 {
-        panic!("No support partition item size:{}",header.partition_item_size);
+        panic!(
+            "No support partition item size:{}",
+            header.partition_item_size
+        );
     }
 
-    if header.version != 0x00010000{
-        panic!("No support partition item version:{}",header.version);
+    if header.version != 0x00010000 {
+        panic!("No support partition item version:{}", header.version);
     }
 
     // 读取数据
@@ -157,35 +159,60 @@ unsafe fn get_partition_item(
 
     // 缓存数据
     let mut current_lba = header.partition_item_lba;
-    let mut current_offset : usize = 0;
-    
+    let mut current_offset: usize = 0;
+
     // 分区
     let mut partitions = Vec::<Box<PartitionItem>>::new();
 
     // 读取所有分区
-    while partitions.len() != usize::try_from(header.partition_item_count).unwrap(){
+    while partitions.len() != usize::try_from(header.partition_item_count).unwrap() {
         // 读取完一个扇区，切换到下一个
-        if current_offset == usize::try_from(block_size).unwrap(){
+        if current_offset == usize::try_from(block_size).unwrap() {
             current_offset = 0;
-            current_lba = current_lba+1;
+            current_lba = current_lba + 1;
         }
 
         // 缓冲区
         let mut block_buffer = vec![0u8; block_size.try_into().unwrap()].into_boxed_slice();
-        
+
         // 读取数据
         disk.read_blocks(disk.media().media_id(), current_lba, &mut block_buffer)
-        .unwrap()
-        .unwrap();
+            .unwrap()
+            .unwrap();
 
         // 检索数据
         partitions.push(Box::new(PartitionItem {
-            partition_type : u128::from_le_bytes(block_buffer[current_offset..current_offset+16].try_into().unwrap()),
-            partition_guid : u128::from_le_bytes(block_buffer[current_offset+16..current_offset+32].try_into().unwrap()),
-            begin_lba : u64::from_le_bytes(block_buffer[current_offset+32..current_offset+40].try_into().unwrap()),
-            end_lba : u64::from_le_bytes(block_buffer[current_offset+40..current_offset+48].try_into().unwrap()),
-            attributes : u64::from_le_bytes(block_buffer[current_offset+48..current_offset+56].try_into().unwrap()),
-            utf16_name : String::from_utf16(&convert_partition_utf16_name(block_buffer[current_offset+56..current_offset+128].try_into().unwrap())).unwrap(),
+            partition_type: u128::from_le_bytes(
+                block_buffer[current_offset..current_offset + 16]
+                    .try_into()
+                    .unwrap(),
+            ),
+            partition_guid: u128::from_le_bytes(
+                block_buffer[current_offset + 16..current_offset + 32]
+                    .try_into()
+                    .unwrap(),
+            ),
+            begin_lba: u64::from_le_bytes(
+                block_buffer[current_offset + 32..current_offset + 40]
+                    .try_into()
+                    .unwrap(),
+            ),
+            end_lba: u64::from_le_bytes(
+                block_buffer[current_offset + 40..current_offset + 48]
+                    .try_into()
+                    .unwrap(),
+            ),
+            attributes: u64::from_le_bytes(
+                block_buffer[current_offset + 48..current_offset + 56]
+                    .try_into()
+                    .unwrap(),
+            ),
+            utf16_name: String::from_utf16(&convert_partition_utf16_name(
+                block_buffer[current_offset + 56..current_offset + 128]
+                    .try_into()
+                    .unwrap(),
+            ))
+            .unwrap(),
         }));
 
         // 自增
@@ -196,7 +223,7 @@ unsafe fn get_partition_item(
 }
 
 /// 根据磁盘Uuid和分区Uuid获取分区范围
-pub fn get_partition(disk: Uuid, partition: Uuid) -> (u64, u64) {
+pub fn get_partition(disk_guid: Uuid, partition_guid: Uuid) -> (u64, u64) {
     unsafe {
         // 获取磁盘
         let disk: &mut BlockIO = get_disk();
@@ -206,17 +233,50 @@ pub fn get_partition(disk: Uuid, partition: Uuid) -> (u64, u64) {
         crate::tool::print_fmt(format_args!("Get GPT header done.\n"));
         crate::tool::print_fmt(format_args!("GPT header:{0:?}\n", header_info));
 
+        // 检查表头信息
+        if header_info.disk_guid != disk_guid.to_u128_le() {
+            panic!(
+                "The disk guid isn't suit for target.\ndisk guid:{0}\nconfig guid:{1}",
+                Uuid::from_u128_le(header_info.disk_guid)
+                    .to_hyphenated()
+                    .encode_lower(&mut Uuid::encode_buffer()),
+                disk_guid
+                    .to_hyphenated()
+                    .encode_lower(&mut Uuid::encode_buffer())
+            );
+        }
+
         // 获取表项信息
-        let item_infos = get_partition_item(header_info,disk);
+        let item_infos = get_partition_item(header_info, disk);
         crate::tool::print_fmt(format_args!("Get GPT partition items done.\n"));
 
-        for item in item_infos.iter(){
+        for item in item_infos.iter() {
             // 只打印有效分区
-            if item.partition_type != 0{
+            if item.partition_type != 0 {
                 crate::tool::print_fmt(format_args!("GPT partition:{0:?}\n", item));
             }
         }
-    }
 
-    (0, 0)
+        // 查找分区
+        // 目标
+        let mut target: Option<Box<PartitionItem>> = None;
+
+        for item in item_infos.iter() {
+            if item.partition_guid == partition_guid.to_u128_le() {
+                target = Some(item.clone());
+            }
+        }
+
+        // 返回
+        if let Some(some) = target {
+            (some.begin_lba, some.end_lba)
+        } else {
+            panic!(
+                "The disk guid isn't suit for target.\nconfig:{0}",
+                partition_guid
+                    .to_hyphenated()
+                    .encode_lower(&mut Uuid::encode_buffer())
+            );
+        }
+    }
 }
