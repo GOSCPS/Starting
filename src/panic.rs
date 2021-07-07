@@ -4,17 +4,17 @@
 //=============================================
 
 use crate::tool;
-use core::panic::PanicInfo;
 use crate::IMAGE_SYSTEM_TABLE;
-use uefi::CStr16;
 use core::fmt::Write;
+use core::panic::PanicInfo;
+use uefi::CStr16;
 
 /// panic擦屁股函数
 #[panic_handler]
 fn panic(panic_info: &PanicInfo) -> ! {
     // 获取系统表
     unsafe {
-        let sys = IMAGE_SYSTEM_TABLE.as_ref().unwrap();
+        let sys = IMAGE_SYSTEM_TABLE.as_mut().unwrap();
 
         // 报告panic
         sys.stdout().write_str("Starting panic!\n").ok();

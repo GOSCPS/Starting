@@ -13,7 +13,7 @@ panic = "abort"
 panic = "abort"
 
 [dependencies]
-uefi = "0.11.0"
+uefi = { git = "https://github.com/rust-osdev/uefi-rs", branch = "master" }
 uuid = { version = "0.8", default-features = false }
 
 # 启用json解析器

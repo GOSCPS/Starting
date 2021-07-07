@@ -9,7 +9,7 @@ use core::fmt::Write;
 pub fn print_fmt(args: Arguments<'_>) {
     unsafe {
         IMAGE_SYSTEM_TABLE
-            .as_ref()
+            .as_mut()
             .unwrap()
             .stdout()
             .write_fmt(args)

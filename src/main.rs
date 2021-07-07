@@ -47,7 +47,7 @@ pub extern "C" fn efi_main(handle: Handle, system_table: SystemTable<Boot>) -> S
 
     // 读取配置文件
     tool::print_fmt(format_args!(
-        "Rerad config from:{}\n",
+        "Read config from:{}\n",
         engine::fs::CONFIG_PATH
     ));
 
