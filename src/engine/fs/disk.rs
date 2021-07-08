@@ -222,6 +222,22 @@ unsafe fn get_partition_item(
     partitions
 }
 
+#[repr(C)]
+pub struct Guid {
+    /// The low field of the timestamp.
+    a: u32,
+    /// The middle field of the timestamp.
+    b: u16,
+    /// The high field of the timestamp multiplexed with the version number.
+    c: u16,
+    /// Contains, in this order:
+    /// - The high field of the clock sequence multiplexed with the variant.
+    /// - The low field of the clock sequence.
+    /// - The spatially unique node identifier.
+    d: [u8; 8],
+}
+
+
 /// 根据磁盘Uuid和分区Uuid获取分区范围
 pub fn get_partition(disk_guid: Uuid, partition_guid: Uuid) -> (u64, u64) {
     unsafe {
@@ -233,17 +249,19 @@ pub fn get_partition(disk_guid: Uuid, partition_guid: Uuid) -> (u64, u64) {
         crate::tool::print_fmt(format_args!("Get GPT header done.\n"));
         crate::tool::print_fmt(format_args!("GPT header:{0:?}\n", header_info));
 
+        let guid = unsafe { core::mem::transmute::<_, Guid>(header_info.disk_guid) };
+
         // 检查表头信息
-        if header_info.disk_guid != disk_guid.to_u128_le() {
-            panic!(
+        if Uuid::from_fields_le(guid.a.swap_bytes(), guid.b.swap_bytes(), guid.c.swap_bytes(), &guid.d).unwrap() != disk_guid {
+             panic!(
                 "The disk guid isn't suit for target.\ndisk guid:{0}\nconfig guid:{1}",
-                Uuid::from_u128_le(header_info.disk_guid)
+                Uuid::from_fields_le(guid.a.swap_bytes(), guid.b.swap_bytes(), guid.c.to_be(), &guid.d).unwrap()
                     .to_hyphenated()
                     .encode_lower(&mut Uuid::encode_buffer()),
                 disk_guid
                     .to_hyphenated()
                     .encode_lower(&mut Uuid::encode_buffer())
-            );
+            ); 
         }
 
         // 获取表项信息
