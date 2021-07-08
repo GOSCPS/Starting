@@ -16,3 +16,11 @@ pub fn print_fmt(args: Arguments<'_>) {
             .ok();
     }
 }
+
+#[macro_export]
+macro_rules! println {
+    () => ($crate::tool::print_fmt(core::format_args!("\n")));
+    ($($arg:tt)*) => ({
+        $crate::io::print_fmt(core::format_args_nl!($($arg)*));
+    })
+}

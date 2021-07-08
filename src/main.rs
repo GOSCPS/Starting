@@ -33,13 +33,12 @@ pub extern "efiapi" fn efi_main(handle: Handle, system_table: SystemTable<Boot>)
     unsafe {
         IMAGE_HANDLE = Some(handle);
         IMAGE_SYSTEM_TABLE = Some(system_table);
-
-        // 打印版本信息
-        tool::print_fmt(format_args!(
-            "Starting version {}\n",
-            env!("CARGO_PKG_VERSION")
-        ));
     }
+    // 打印版本信息
+    tool::print_fmt(format_args!(
+        "Starting version {}\n",
+        env!("CARGO_PKG_VERSION")
+    ));
 
     // 初始化
     engine::init_system();
@@ -57,11 +56,8 @@ pub extern "efiapi" fn efi_main(handle: Handle, system_table: SystemTable<Boot>)
     // 读取完毕
     // 设置gop
     if config.enable_gop {
-        match engine::gop::set_video_resolution(config.gop_x, config.gop_y) {
-            Ok(_ok) => (),
-
-            Err(_err) => panic!("Set the Graphics Output Protocol resolution failed down!"),
-        }
+        engine::gop::set_video_resolution(config.gop_x, config.gop_y)
+            .expect("Set the Graphics Output Protocol resolution failed down!");
 
         // 清屏
         engine::gop::clear_framebuffer().unwrap();
