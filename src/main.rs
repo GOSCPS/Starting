@@ -34,7 +34,7 @@ pub extern "efiapi" fn efi_main(handle: Handle, system_table: SystemTable<Boot>)
         IMAGE_HANDLE = Some(handle);
         IMAGE_SYSTEM_TABLE = Some(system_table);
     }
-        // 打印版本信息
+    // 打印版本信息
     tool::print_fmt(format_args!(
         "Starting version {}\n",
         env!("CARGO_PKG_VERSION")
