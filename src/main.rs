@@ -16,6 +16,9 @@ extern crate alloc;
 // 载入定义
 use uefi::prelude::*;
 use uuid::Uuid;
+use alloc::vec;
+use fat32::volume::Volume;
+use object::{Object, ObjectSegment};
 
 // 模块
 mod engine;
@@ -63,7 +66,7 @@ pub extern "efiapi" fn efi_main(handle: Handle, system_table: SystemTable<Boot>)
         engine::gop::clear_framebuffer().unwrap();
     }
 
-    // 准备内核
+    // 准备分区
     let (begin, end) = engine::fs::disk::get_partition(
         Uuid::parse_str(&config.disk_guid).unwrap(),
         Uuid::parse_str(&config.partition_guid).unwrap(),
@@ -74,5 +77,65 @@ pub extern "efiapi" fn efi_main(handle: Handle, system_table: SystemTable<Boot>)
         begin, end
     ));
 
-    loop {}
+    // 检查文件系统
+    if config.file_system.trim().to_uppercase() != "FAT32"{
+        panic!("File system not supported!");
+    }
+
+    let fat32;
+    unsafe{
+    // 加载文件系统
+    fat32 = engine::fs::fat32::Fat32{
+        begin_lba : begin,
+        end_lba   : end
+    };
+}
+
+    // 加载根目录
+    let partition = Volume::new(fat32);
+    let root = partition.root_dir();
+
+    // 读取内核
+    let file = root.open_file(&config.kernel_path).unwrap();
+
+    let mut kernel_buffer = vec![0u8;config.kernel_length];
+    file.read(&mut kernel_buffer).unwrap();
+
+    // 解析ELF
+    let obj_file = object::File::parse(&*kernel_buffer.into_boxed_slice()).unwrap();
+
+    // 内核
+    // 在文件中的起始地址和结束地址
+    let kernel : Option<(u64,u64)> = None;
+
+    for segment in obj_file.segments() {
+        if segment.name().unwrap_or(Some("ERROR SEGMENTS NAME")).unwrap_or("ERROR SEGMENTS NAME") == "kernel_start"{
+            kernel = Some(segment.file_range());
+        }
+    }
+
+    // 检查段
+    if kernel.is_none(){
+        panic!("Can't find kernel_start segment!");
+    }
+
+    // 退出UEFI boot服务
+    IMAGE_SYSTEM_TABLE.unwrap()
+    .exit_boot_services(
+        IMAGE_HANDLE.unwrap(),
+        &mut engine::get_memory_map())
+    .unwrap();
+
+    // 释放资源
+    IMAGE_HANDLE = None;
+    IMAGE_SYSTEM_TABLE = None;
+
+    // 进入内核
+    unsafe{
+        let kernel_start : *mut fn() -> !;
+
+        kernel_start = ((kernel_buffer.as_ptr() as usize) + kernel.unwrap().0 as usize)as *mut fn() -> !;
+
+        (*kernel_start)();
+    }
 }

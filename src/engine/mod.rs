@@ -9,6 +9,7 @@ pub mod gop;
 use crate::IMAGE_SYSTEM_TABLE;
 use core::alloc::{GlobalAlloc, Layout};
 use uefi::table::boot::MemoryType;
+use alloc::vec::Vec;
 
 /// UEfi内存分配器
 pub struct UefiAllocator;
@@ -63,4 +64,21 @@ fn set_watchdog_timer() {
             .unwrap()
             .unwrap();
     }
+}
+
+/// 获取UEFI的memory map
+pub fn get_memory_map() -> &'static [u8]{
+    let map_size = IMAGE_SYSTEM_TABLE.as_ref().unwrap().boot_services().memory_map_size();
+
+    // Build a buffer bigger enough to handle the memory map
+    let mut buffer = Vec::with_capacity(map_size);
+    unsafe {
+        buffer.set_len(map_size);
+    }
+
+    IMAGE_SYSTEM_TABLE.as_ref().unwrap().boot_services()
+    .memory_map(&mut buffer)
+    .unwrap();
+
+    &buffer
 }

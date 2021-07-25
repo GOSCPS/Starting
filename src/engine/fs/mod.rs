@@ -5,6 +5,7 @@
 // 用来操作文件系统
 
 pub mod disk;
+pub mod fat32;
 
 use crate::IMAGE_SYSTEM_TABLE;
 use alloc::string::String;

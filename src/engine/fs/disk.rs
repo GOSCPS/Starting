@@ -16,7 +16,7 @@ use uefi::proto::media::block::BlockIO;
 use uuid::Uuid;
 
 /// 获取BlockIO Handle
-unsafe fn get_disk() -> &'static mut uefi::proto::media::block::BlockIO {
+pub unsafe fn get_disk() -> &'static mut uefi::proto::media::block::BlockIO {
     // 获取引导服务
     let boot_services = IMAGE_SYSTEM_TABLE.as_ref().unwrap().boot_services();
 
@@ -154,7 +154,7 @@ unsafe fn get_partition_item(
         panic!("No support partition item version:{}", header.version);
     }
 
-    // 读取数据
+    // 获取区块大小
     let block_size = disk.media().block_size();
 
     // 缓存数据
@@ -176,7 +176,10 @@ unsafe fn get_partition_item(
         let mut block_buffer = vec![0u8; block_size.try_into().unwrap()].into_boxed_slice();
 
         // 读取数据
-        disk.read_blocks(disk.media().media_id(), current_lba, &mut block_buffer)
+        disk.read_blocks(
+            disk.media().media_id(), 
+            current_lba, 
+            &mut block_buffer)
             .unwrap()
             .unwrap();
 
@@ -312,7 +315,7 @@ pub fn get_partition(disk_guid: Uuid, partition_guid: Uuid) -> (u64, u64) {
             (some.begin_lba, some.end_lba)
         } else {
             panic!(
-                "The disk guid isn't suit for target.\nconfig:{0}",
+                "The partition guid isn't suit for target.\nconfig:{0}",
                 partition_guid
                     .to_hyphenated()
                     .encode_lower(&mut Uuid::encode_buffer())

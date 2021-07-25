@@ -13,9 +13,19 @@ panic = "abort"
 panic = "abort"
 
 [dependencies]
+# 启用UEFI支持
 uefi = { git = "https://github.com/rust-osdev/uefi-rs", branch = "master" }
+
+# 启用UUID解析和支持
 uuid = { version = "0.8", default-features = false }
 
 # 启用json解析器
 serde = { version = "1.0", default-features = false, features = ["alloc","derive"] }
 serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
+
+# 启用FAT32支持
+fat32 = "0.2.0"
+block_device = "0.1.2"
+
+# 启用ELF支持
+object = {version = "0.25.3",features = ["read_core","elf"]}

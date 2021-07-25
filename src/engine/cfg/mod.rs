@@ -23,4 +23,13 @@ pub struct Config {
 
     #[serde(rename = "PartitionGUID")]
     pub partition_guid: String,
+
+    #[serde(rename = "KernelPath")]
+    pub kernel_path: String,
+
+    #[serde(rename = "FileSystem")]
+    pub file_system: String,
+
+    #[serde(rename = "KernelLength")]
+    pub kernel_length: usize,
 }
