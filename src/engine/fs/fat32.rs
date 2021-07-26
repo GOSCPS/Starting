@@ -34,7 +34,7 @@ impl BlockDevice for Fat32 {
         Ok(())
     }
 
-    fn write(&self, buf: &[u8], address: usize, number_of_blocks: usize) -> Result<(), Self::Error> {
+    fn write(&self, buf: &[u8], address: usize, _number_of_blocks: usize) -> Result<(), Self::Error> {
         unsafe{
 
         let disk = super::disk::get_disk();

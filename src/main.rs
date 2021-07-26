@@ -83,13 +83,11 @@ pub extern "efiapi" fn efi_main(handle: Handle, system_table: SystemTable<Boot>)
     }
 
     let fat32;
-    unsafe{
     // 加载文件系统
     fat32 = engine::fs::fat32::Fat32{
         begin_lba : begin,
         end_lba   : end
     };
-}
 
     // 加载根目录
     let partition = Volume::new(fat32);
@@ -102,39 +100,41 @@ pub extern "efiapi" fn efi_main(handle: Handle, system_table: SystemTable<Boot>)
     file.read(&mut kernel_buffer).unwrap();
 
     // 解析ELF
-    let obj_file = object::File::parse(&*kernel_buffer.into_boxed_slice()).unwrap();
+    let kernel = &*kernel_buffer.into_boxed_slice();
+    let obj_file = object::File::parse(kernel).unwrap();
 
     // 内核
     // 在文件中的起始地址和结束地址
-    let kernel : Option<(u64,u64)> = None;
+    let mut kernel_range : Option<(u64,u64)> = None;
 
     for segment in obj_file.segments() {
         if segment.name().unwrap_or(Some("ERROR SEGMENTS NAME")).unwrap_or("ERROR SEGMENTS NAME") == "kernel_start"{
-            kernel = Some(segment.file_range());
+            kernel_range = Some(segment.file_range());
         }
     }
 
     // 检查段
-    if kernel.is_none(){
+    if kernel_range.is_none(){
         panic!("Can't find kernel_start segment!");
     }
 
     // 退出UEFI boot服务
-    IMAGE_SYSTEM_TABLE.unwrap()
-    .exit_boot_services(
-        IMAGE_HANDLE.unwrap(),
-        &mut engine::get_memory_map())
-    .unwrap();
+    unsafe{
+        let memory_map = &mut *(&*engine::get_memory_map() as *const [u8] as *mut [u8]);    
 
-    // 释放资源
-    IMAGE_HANDLE = None;
-    IMAGE_SYSTEM_TABLE = None;
+        IMAGE_SYSTEM_TABLE.take().unwrap()
+        .exit_boot_services(
+            IMAGE_HANDLE.unwrap(),
+            memory_map)
+        .unwrap()
+        .unwrap();
+    }
 
     // 进入内核
     unsafe{
         let kernel_start : *mut fn() -> !;
 
-        kernel_start = ((kernel_buffer.as_ptr() as usize) + kernel.unwrap().0 as usize)as *mut fn() -> !;
+        kernel_start = ((kernel.as_ptr() as usize) + kernel_range.unwrap().0 as usize)as *mut fn() -> !;
 
         (*kernel_start)();
     }

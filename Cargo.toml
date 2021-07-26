@@ -28,4 +28,4 @@ fat32 = "0.2.0"
 block_device = "0.1.2"
 
 # 启用ELF支持
-object = {version = "0.25.3",features = ["read_core","elf"]}
+object = {version = "0.25.3",default-features = false,features = ["read_core","elf"]}

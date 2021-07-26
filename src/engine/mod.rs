@@ -67,18 +67,18 @@ fn set_watchdog_timer() {
 }
 
 /// 获取UEFI的memory map
-pub fn get_memory_map() -> &'static [u8]{
-    let map_size = IMAGE_SYSTEM_TABLE.as_ref().unwrap().boot_services().memory_map_size();
+pub unsafe fn get_memory_map() -> Vec<u8>{
+    let map_size = IMAGE_SYSTEM_TABLE.as_mut().unwrap().boot_services().memory_map_size();
 
     // Build a buffer bigger enough to handle the memory map
     let mut buffer = Vec::with_capacity(map_size);
-    unsafe {
-        buffer.set_len(map_size);
-    }
+        
+    buffer.set_len(map_size);
 
     IMAGE_SYSTEM_TABLE.as_ref().unwrap().boot_services()
     .memory_map(&mut buffer)
+    .unwrap()
     .unwrap();
 
-    &buffer
+    buffer
 }
